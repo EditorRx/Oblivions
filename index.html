@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Track your watchlist</title>
+<style>
+  :root{
+    --bg:#08121a;
+    --card:#0f2a36;
+    --muted:#9aa6b0;
+    --accent:#19f0ff;
+    --accent-2:#ff7f2a;
+    --fav:#ff3b5c;
+    --glass: rgba(255,255,255,0.03);
+    --radius:14px;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(1200px 600px at 10% 10%, rgba(25,90,110,0.12), transparent 10%),
+      radial-gradient(900px 600px at 90% 90%, rgba(5,55,66,0.12), transparent 10%),
+      var(--bg);
+    color:#dfe9ee;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .container{
+    max-width:980px;
+    margin:24px auto;
+    padding:20px;
+  }
+
+  /* Top slide bar */
+  .topbar{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .tab{
+    padding:10px 18px;
+    background:transparent;
+    border-radius:999px;
+    color:var(--muted);
+    cursor:pointer;
+    border:1px solid rgba(255,255,255,0.02);
+    transition:all .18s ease;
+    user-select:none;
+  }
+  .tab.active { color:white; box-shadow:0 0 30px rgba(25,240,255,0.06); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+  .tab.watched.active{ box-shadow:0 0 18px 3px rgba(25,240,255,0.08); border-color:rgba(25,240,255,0.12); }
+  .tab.pending.active{ box-shadow:0 0 16px 3px rgba(255,127,42,0.08); border-color:rgba(255,127,42,0.12); color:white; }
+  .tab.fav.active{ box-shadow:0 0 16px 3px rgba(255,59,92,0.08); border-color:rgba(255,59,92,0.12); color:white; }
+  .tab.watchlink{ margin-left:auto; text-decoration:underline; opacity:.9; }
+
+  /* Layout */
+  .main{
+    display:grid;
+    grid-template-columns: 320px 1fr;
+    gap:18px;
+  }
+
+  /* Left profile card */
+  .profile{
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:var(--radius);
+    padding:26px;
+    border:1px solid rgba(255,255,255,0.03);
+    height:720px;
+  }
+  .avatar-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .avatar{
+    width:150px;height:150px;border-radius:50%;
+    border:8px solid rgba(25,240,255,0.08);
+    overflow:hidden;
+    display:flex;
+    align-items:center;justify-content:center;
+    background:linear-gradient(180deg,#05202a,#0b3140);
+  }
+  .avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .avatar input[type=file]{ display:none; }
+  .btn-upload{
+    margin-top:8px;
+    background:transparent;border:1px dashed rgba(255,255,255,0.04);
+    padding:6px 10px;border-radius:10px;color:var(--muted);cursor:pointer;
+  }
+  h2{ letter-spacing:1px; margin:18px 0 6px; text-align:center; }
+  .field{
+    width:100%; padding:8px 12px; border-radius:12px;
+    background:var(--glass); border:1px solid rgba(255,255,255,0.02);
+    color:white; margin-bottom:10px; outline:none;
+  }
+  textarea.field{ min-height:84px; resize:vertical; }
+
+/* Right movies list */
+  .movies-card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:var(--radius);
+    padding:12px;
+    border:1px solid rgba(255,255,255,0.03);
+    height:720px;
+    overflow:auto;
+  }
+  .movies-list{ display:flex; flex-direction:column; gap:12px; padding:8px; }
+
+  .movie{
+    background:rgba(255,255,255,0.01);
+    border-radius:10px;
+    padding:12px 14px;
+    display:flex; flex-direction:column; gap:8px;
+    border:1px solid rgba(255,255,255,0.02);
+    position:relative;
+  }
+  .movie-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .movie-title{ font-weight:600; font-size:15px; color:#eaf6ff; display:flex; align-items:center; gap:8px; }
+  .movie-meta{ color:var(--muted); font-size:13px; }
+  .caret{ transform:rotate(0deg); transition:transform .15s; cursor:pointer; }
+  .caret.open{ transform:rotate(180deg); }
+
+  .movie .actions{ display:flex; align-items:center; gap:8px; }
+  .heart{
+    width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;border:1px solid rgba(255,255,255,0.02);
+  }
+  .heart.lit{ box-shadow:0 0 14px rgba(255,59,92,0.12); background: linear-gradient(90deg, rgba(255,59,92,0.06), rgba(255,59,92,0.02)); color:var(--fav); }
+  .movie.watched { box-shadow:0 0 30px rgba(25,240,255,0.03); border-color:rgba(25,240,255,0.02); }
+  .movie.pending { box-shadow:0 0 22px rgba(255,127,42,0.04); border-color:rgba(255,127,42,0.02); }
+  .movie.favorite { box-shadow:0 0 22px rgba(255,59,92,0.06); border-color:rgba(255,59,92,0.04); }
+
+  .notes{ font-size:14px; color:var(--muted); padding:8px 10px; border-radius:8px; background:rgba(255,255,255,0.01); }
+  .notes .edit{ display:inline-block; margin-left:8px; font-size:13px; color:var(--accent); cursor:pointer; }
+
+  .movie-footer{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .done-btn{ background:transparent; border:1px solid rgba(255,255,255,0.03); padding:6px 10px; border-radius:8px; cursor:pointer; color:var(--muted); }
+  .done-btn.primary{ background:var(--accent); color:#002129; border-color:transparent; }
+
+  /* modal */
+  .modal-back{ position:fixed; inset:0; background:rgba(3,6,8,0.6); display:none; align-items:center; justify-content:center; z-index:999; }
+  .modal{ width:420px; background:#071d24; border-radius:12px; padding:18px; border:1px solid rgba(255,255,255,0.04); }
+  .modal h3{ margin:0 0 10px; }
+  .row{ display:flex; gap:8px; margin-bottom:8px; }
+  .modal .field{ width:100%; }
+  
+   /* small helpers */
+  .muted{ color:var(--muted); font-size:13px; }
+  .no-items{ text-align:center; color:var(--muted); padding:40px 0; }
+
+  /* responsive */
+  @media (max-width:880px){
+    .main{ grid-template-columns: 1fr; }
+    .profile{ height:auto; }
+    .movies-card{ height:auto; margin-top:14px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="tab watched active" data-tab="watched">Watched</div>
+    <div class="tab pending" data-tab="pending">Pending</div>
+    <div class="tab fav" data-tab="favorites">Favourite</div>
+    <div class="tab watchlink" id="openLink">Watch Movies</div>
+    <button id="addMovieBtn" class="tab" style="margin-left:12px">+ Add Movie</button>
+  </div>
+
+  <div class="main">
+    <!-- Left profile -->
+    <div class="avatar-wrap">
+  <label class="avatar" id="avatarLabel">
+    <img id="avatarImg"
+      src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='100%' height='100%' fill='%2305171b'/></svg>"
+      alt="avatar">
+    <!-- hidden file input inside label -->
+    <input type="file" id="avatarInput" accept="image/*">
+  </label>
+  <button class="btn-upload" id="uploadBtn">Change Photo</button>
+</div>
+
+      <h2>PROFILE</h2>
+
+      <input id="nameInput" class="field" placeholder="Your name" />
+      <input id="ageInput" class="field" placeholder="Age" />
+      <textarea id="bioInput" class="field" placeholder="A few lines about you..."></textarea>
+
+      <div class="muted" style="margin-top:10px">Tip: Profile data saved in your browser (localStorage).</div>
+    </div>
+
+    <!-- Right movies -->
+    <div class="movies-card">
+      <div class="movies-list" id="moviesList">
+        <!-- movie items injected here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal to add movie -->
+<div class="modal-back" id="modalBack">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3>Add New Movie</h3>
+    <div class="row">
+      <input id="newTitle" class="field" placeholder="Movie title">
+    </div>
+    <div class="row">
+      <input id="newNotes" class="field" placeholder="Notes (optional)">
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+      <label style="display:flex; align-items:center; gap:8px; color:var(--muted)"><input type="checkbox" id="newFav"> Add to Favorites ❤️</label>
+      <label style="display:flex; align-items:center; gap:8px; color:var(--muted); margin-left:auto;">
+        <select id="newStatus" class="field" style="padding:6px 10px; width:160px;">
+          <option value="watched">Add to Watched</option>
+          <option value="pending">Add to Pending</option>
+        </select>
+      </label>
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button id="cancelAdd" class="tab">Cancel</button>
+      <button id="confirmAdd" class="tab" style="background:var(--accent); color:#001d20;">Add Movie</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /***********************
+   * Data model + storage
+   ***********************/
+  const LS_KEY = 'my_movies_dashboard_v1';
+  const LS_PROFILE = 'my_movies_profile_v1';
+
+  let state = {
+    movies: [], // {id,title,notes,isFavorite, status: 'watched'|'pending'}
+    tab: 'watched'
+  };
+
+  // helpers
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => document.querySelectorAll(sel);
+
+  // sample default entries
+  function defaultMovies(){
+    return [
+      {id: genId(), title: "Inception", notes: "Great mind-bending thriller.", isFavorite:false, status:'watched'},
+      {id: genId(), title: "The Matrix", notes: "", isFavorite:true, status:'watched'},
+      {id: genId(), title: "A Pending Movie", notes: "Will watch soon", isFavorite:false, status:'pending'}
+    ];
+  }
+
+  function genId(){ return 'm_'+Math.random().toString(36).slice(2,9); }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      state.movies = raw ? JSON.parse(raw) : defaultMovies();
+    }catch(e){
+      state.movies = defaultMovies();
+    }
+    // load profile
+    const profileRaw = localStorage.getItem(LS_PROFILE);
+    if(profileRaw){
+      const p = JSON.parse(profileRaw);
+      $('#avatarImg').src = p.avatar || $('#avatarImg').src;
+      $('#nameInput').value = p.name || '';
+      $('#ageInput').value = p.age || '';
+      $('#bioInput').value = p.bio || '';
+    }
+  }
+  function save(){
+    localStorage.setItem(LS_KEY, JSON.stringify(state.movies));
+  }
+  function saveProfile(){
+    const p = { avatar: $('#avatarImg').src, name: $('#nameInput').value, age: $('#ageInput').value, bio: $('#bioInput').value };
+    localStorage.setItem(LS_PROFILE, JSON.stringify(p));
+  }
+
+  /***********************
+   * UI Rendering
+   ***********************/
+  const moviesList = $('#moviesList');
+
+  function render(){
+    // update tab appearance
+    $$('.tab').forEach(t => {
+      t.classList.remove('active');
+      if(t.dataset.tab === state.tab) t.classList.add('active');
+    });
+       // decide which movies to show based on tab
+    let list = [];
+    if(state.tab === 'watched') {
+      // show all watched (status==='watched' OR status==='watched' with favorites also included)
+      list = state.movies.filter(m => m.status === 'watched' || m.status === 'watched'); // explicit
+    } else if(state.tab === 'pending'){
+      list = state.movies.filter(m => m.status === 'pending');
+    } else if(state.tab === 'favorites'){
+      list = state.movies.filter(m => m.isFavorite);
+    }
+
+    moviesList.innerHTML = '';
+    if(list.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'no-items';
+      if(state.tab === 'watched') empty.textContent = 'No watched movies yet. Add one!';
+      else if(state.tab === 'pending') empty.textContent = 'No pending movies. Add some to keep track.';
+      else empty.textContent = 'No favorites yet. Mark movies as ❤️ to see them here.';
+      moviesList.appendChild(empty);
+      return;
+    }
+
+    list.forEach(m => {
+      const el = document.createElement('div');
+      el.className = 'movie';
+      if(m.status === 'watched') el.classList.add('watched');
+      if(m.status === 'pending') el.classList.add('pending');
+      if(m.isFavorite) el.classList.add('favorite');
+
+      el.dataset.id = m.id;
+
+      // row
+      const row = document.createElement('div');
+      row.className = 'movie-row';
+
+      const left = document.createElement('div');
+      left.style.display='flex';
+      left.style.flexDirection='column';
+
+      const titleWrap = document.createElement('div');
+      titleWrap.style.display='flex';
+      titleWrap.style.alignItems='center';
+      titleWrap.style.gap='8px';
+
+      const title = document.createElement('div');
+      title.className = 'movie-title';
+      title.textContent = m.title;
+
+      const meta = document.createElement('div');
+      meta.className = 'movie-meta';
+      meta.textContent = m.status === 'pending' ? 'Pending' : (m.isFavorite ? 'Favourite' : 'Watched');
+
+      titleWrap.appendChild(title);
+      titleWrap.appendChild(meta);
+
+      left.appendChild(titleWrap);
+
+     // actions
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+
+      const heart = document.createElement('button');
+      heart.className = 'heart';
+      heart.innerHTML = m.isFavorite ? '❤️' : '🤍';
+      if(m.isFavorite) heart.classList.add('lit');
+
+      heart.onclick = (ev) => {
+        ev.stopPropagation();
+        toggleFavorite(m.id);
+      };
+
+      const caret = document.createElement('div');
+      caret.className = 'caret';
+      caret.innerHTML = '▾';
+      caret.style.fontSize='18px';
+      caret.title = 'Toggle notes';
+
+      caret.onclick = (ev) => {
+        ev.stopPropagation();
+        const notesEl = el.querySelector('.notes');
+        const isOpen = notesEl.style.display === 'block';
+        notesEl.style.display = isOpen ? 'none' : 'block';
+        caret.classList.toggle('open', !isOpen);
+      };
+
+      actions.appendChild(heart);
+      actions.appendChild(caret);
+
+      row.appendChild(left);
+      row.appendChild(actions);
+      el.appendChild(row);
+
+      // notes area
+      const notes = document.createElement('div');
+      notes.className = 'notes';
+      notes.style.display = 'none';
+
+      const notesText = document.createElement('span');
+      notesText.textContent = m.notes ? m.notes : 'Add something about this movie...';
+      notes.appendChild(notesText);
+
+      const editLink = document.createElement('span');
+      editLink.className = 'edit';
+      editLink.textContent = m.notes ? 'Edit' : 'Add';
+      editLink.onclick = (ev) => {
+        ev.stopPropagation();
+        openEditNotes(m.id);
+      };
+      notes.appendChild(editLink);
+
+      el.appendChild(notes);
+
+      // footer actions
+      const footer = document.createElement('div');
+      footer.className = 'movie-footer';
+
+     // if pending show Done button
+      if(m.status === 'pending'){
+        const done = document.createElement('button');
+        done.className = 'done-btn primary';
+        done.textContent = 'Done';
+        done.onclick = (ev) => {
+          ev.stopPropagation();
+          markDone(m.id);
+        };
+        footer.appendChild(done);
+      } else {
+        const spacer = document.createElement('div');
+        spacer.className = 'muted';
+        spacer.textContent = ' ';
+        footer.appendChild(spacer);
+      }
+
+      // small delete for convenience
+      const del = document.createElement('button');
+      del.className = 'done-btn';
+      del.textContent = 'Remove';
+      del.onclick = (ev)=>{ ev.stopPropagation(); removeMovie(m.id); };
+      footer.appendChild(del);
+
+      el.appendChild(footer);
+
+      moviesList.appendChild(el);
+    });
+  }
+
+  /***********************
+   * Actions
+   ***********************/
+  function toggleFavorite(id){
+    const movie = state.movies.find(m=>m.id===id);
+    if(!movie) return;
+    movie.isFavorite = !movie.isFavorite;
+    // keep movie in watched/pending but flag favorite
+    save(); render();
+  }
+
+  function markDone(id){
+    const movie = state.movies.find(m=>m.id===id);
+    if(!movie) return;
+    movie.status = 'watched';
+    save(); render();
+  }
+
+  function removeMovie(id){
+    if(!confirm('Remove this movie?')) return;
+    state.movies = state.movies.filter(m=>m.id!==id);
+    save(); render();
+  }
+
+  function openEditNotes(id){
+    const movie = state.movies.find(m=>m.id===id);
+    if(!movie) return;
+    // simple prompt for quick editing
+    const newNotes = prompt('Notes for "'+movie.title+'"', movie.notes || '');
+    if(newNotes === null) return;
+    movie.notes = newNotes.trim();
+    save(); render();
+  }
+
+  /***********************
+   * Modal: add movie
+   ***********************/
+  const modalBack = $('#modalBack');
+  $('#addMovieBtn').addEventListener('click', ()=> {
+    modalBack.style.display = 'flex';
+  });
+  $('#cancelAdd').addEventListener('click', ()=> { modalBack.style.display='none'; });
+  $('#confirmAdd').addEventListener('click', ()=> {
+    const title = $('#newTitle').value.trim();
+    if(!title){ alert('Please enter movie title'); return; }
+    const notes = $('#newNotes').value.trim();
+    const fav = $('#newFav').checked;
+    const status = $('#newStatus').value;
+
+    const movie = { id: genId(), title, notes, isFavorite: fav, status: status };
+    state.movies.unshift(movie);
+    save();
+    modalBack.style.display='none';
+    // clear
+    $('#newTitle').value=''; $('#newNotes').value=''; $('#newFav').checked=false; $('#newStatus').value='watched';
+    // if added to watched and current tab is watched show it
+    render();
+  });
+
+  // clicking outside modal
+  modalBack.addEventListener('click', (e)=> { if(e.target === modalBack) modalBack.style.display='none'; });
+
+  /***********************
+   * Profile / avatar
+   ***********************/
+  $('#uploadBtn').addEventListener('click', ()=> $('#avatarInput').click());
+  $('#avatarLabel').addEventListener('click', ()=> $('#avatarInput').click());
+  $('#avatarInput').addEventListener('change', (e)=>{
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      $('#avatarImg').src = ev.target.result;
+      saveProfile();
+    };
+    reader.readAsDataURL(f);
+  });
+
+  // save profile on change
+  $('#nameInput').addEventListener('input', saveProfile);
+  $('#ageInput').addEventListener('input', saveProfile);
+  $('#bioInput').addEventListener('input', saveProfile);
+
+  /***********************
+   * Tabs and link
+   ***********************/
+  $$('.tab').forEach(t => {
+    t.addEventListener('click', (ev)=>{
+      const tab = t.dataset.tab;
+      if(tab){
+        state.tab = tab;
+        render();
+      }
+    });
+  });
+
+  $('#openLink').addEventListener('click', ()=> {
+    // open the provided URL in new tab
+    window.open('https://Freemovies.openinapp.link/Movie-haunt', '_blank');
+  });
+
+  /***********************
+   * Initialize
+   ***********************/
+  load();
+  render();
+
+  // expose small debug on console
+  window.__app = {
+    state,
+    save,
+    load,
+    render
+  };
+</script>
+</body>
+</html>

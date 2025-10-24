@@ -81,7 +81,7 @@ header h1 {
   font-family: 'Orbitron', sans-serif;
   font-size: 3rem;
   color: #00fff7;
-  text-shadow: 0 0 20px #00fff7;
+  text-shadow: 0 0 20px #3dffa8;
 }
 
 .social-buttons {
@@ -153,7 +153,7 @@ header h1 {
   background: rgba(255, 255, 255, 0.1);
   padding: 15px;
   border-radius: 10px;
-  box-shadow: 0 0 15px #00fff7;
+  box-shadow: 0 0 35px #3dffa8;
   margin-top: 5px;
 }
 
@@ -165,16 +165,16 @@ header h1 {
 .resource-table th, .resource-table td {
   padding: 10px;
   text-align: left;
-  border-bottom: 1px solid #00fff7;
+  border-bottom: 1px solid #fff;
 }
 
 .resource-table a {
-  background: #00fff7;
+  background: #55e66b;
   color: #000;
   padding: 5px 10px;
   border-radius: 5px;
   text-decoration: none;
-  box-shadow: 0 0 10px #00fff7;
+  box-shadow: 0 0 10px #55e691;
 }
 
 .about, .info {
@@ -183,11 +183,11 @@ header h1 {
   padding: 20px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  box-shadow: 0 0 15px #00fff7;
+  box-shadow: 0 0 7px #7cebca;
 }
 
 .about h2, .info h2 {
-  color: #00fff7;
+  color: #e83a23;
   margin-bottom: 10px;
 }
 

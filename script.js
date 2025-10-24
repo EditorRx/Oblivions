@@ -1,5 +1,5 @@
 // Authentication System Toggle (Set to true to enable, false to disable)
-const isAuthenticationEnabled = true;
+const isAuthenticationEnabled = false;
 const customPasscode = "67"; // Change this to your desired passcode
 
 if (isAuthenticationEnabled) {
